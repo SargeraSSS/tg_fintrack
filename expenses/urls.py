@@ -6,6 +6,8 @@ from .views import (
     TelegramUserViewSet,
     RegularPaymentsViewSet,
 )
+from django.urls import path
+from . import views
 
 router = routers.DefaultRouter()
 router.register("expenses", ExpenseViewSet, basename="expense")
@@ -14,4 +16,6 @@ router.register("user-profile", UserProfileViewSet, basename="user-profile")
 router.register("telegram-user", TelegramUserViewSet, basename="telegram-user")
 router.register("regular-payments", RegularPaymentsViewSet, basename="regular-payments")
 
-urlpatterns = router.urls
+urlpatterns = router.urls + [
+    path("get-token/<int:telegram_id>/", views.get_token_by_telegram_id),
+]

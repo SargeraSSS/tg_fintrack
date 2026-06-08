@@ -24,9 +24,7 @@ Here's what I can do:
 📋 Keep your expense history
 🔄 Manage regular monthly payments
 💰 Set a daily spending limit
-
-To get started, please create your account by choosing a password.
-Just type your password below 👇"""
+"""
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -47,6 +45,14 @@ async def register_user(telegram_id: int, context):
         )
         if response.status_code == 201:
             context.user_data["token"] = response.json()["token"]
+        elif response.status_code == 400:
+            # user already exists — fetch their token
+            token_response = await client.get(
+                f"{API_URL}/get-token/{telegram_id}/",
+                headers={"Authorization": f"Token {ADMIN_TOKEN}"},
+            )
+            if token_response.status_code == 200:
+                context.user_data["token"] = token_response.json()["token"]
         return response.status_code
 
 
@@ -83,7 +89,6 @@ async def handle_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
     category_id = int(query.data)
     amount = context.user_data.get("amount")
     token = context.user_data.get("token")
-
     # зберігаємо витрату в API
     async with httpx.AsyncClient() as client:
         response = await client.post(

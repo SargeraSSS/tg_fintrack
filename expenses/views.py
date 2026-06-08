@@ -10,6 +10,8 @@ from .serializers import (
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
+from rest_framework.response import Response
+from rest_framework.decorators import api_view
 
 
 # Categories are public - no auth requaied
@@ -84,3 +86,16 @@ class TelegramUserViewSet(viewsets.ModelViewSet):
         token, _ = Token.objects.get_or_create(user=tg_user.user)
         response.data["token"] = token.key
         return response
+
+
+from rest_framework.decorators import api_view
+
+
+@api_view(["GET"])
+def get_token_by_telegram_id(request, telegram_id):
+    try:
+        tg_user = TelegramUser.objects.get(telegram_id=telegram_id)
+        token, _ = Token.objects.get_or_create(user=tg_user.user)
+        return Response({"token": token.key})
+    except TelegramUser.DoesNotExist:
+        return Response({"error": "User not found"}, status=404)
