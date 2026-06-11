@@ -64,7 +64,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data["amount"] = amount
         categories = await get_categories()
         keyboard = [
-            [InlineKeyboardButton(cat["name"], callback_data=str(cat["id"]))]
+            [
+                InlineKeyboardButton(
+                    cat["name"], callback_data=f"{cat['id']}:{cat['name']}"
+                )
+            ]
             for cat in categories
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
@@ -86,9 +90,12 @@ async def handle_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    category_id = int(query.data)
     amount = context.user_data.get("amount")
     token = context.user_data.get("token")
+    data = query.data.split(":")
+    category_id = int(data[0])
+    category_name = data[1]
+
     # зберігаємо витрату в API
     async with httpx.AsyncClient() as client:
         response = await client.post(
@@ -98,9 +105,17 @@ async def handle_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
     if response.status_code == 201:
-        await query.edit_message_text("✅ Expense saved!")
+        await query.edit_message_text(
+            f"✅ Expense saved!\n"
+            f"💰 Amount: {amount} PLN\n"
+            f"📂 Category: {category_name}\n"
+            f"📅 Date: {response.json()['date']}"
+        )
     else:
-        await query.edit_message_text("❌ Something went wrong")
+        await query.edit_message_text(
+            "❌ Something went wrong. Please try again.\n"
+            "💡 To record an expense, just send a number. Example: 100"
+        )
 
 
 app = ApplicationBuilder().token(BOT_TOKEN).build()
