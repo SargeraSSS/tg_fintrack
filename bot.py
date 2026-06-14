@@ -101,6 +101,20 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text(text)
 
 
+async def history(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async with httpx.AsyncClient() as client:
+        responce = await client.get(
+            f"{API_URL}/history/",
+            headers={"Authorization": f"Token {context.user_data["token"]}"},
+        )
+        data = responce.json()
+        text = "📋 History\n\n"
+        for expense in data:
+            desc = f" — {expense['description']}" if expense["description"] else ""
+            text += f"{expense['date']} — {expense['category__name']} — {expense['amount']} PLN{desc}\n"
+        await update.message.reply_text(text)
+
+
 async def handle_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -140,4 +154,5 @@ app.add_handler(CommandHandler("start", start))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 app.add_handler(CallbackQueryHandler(handle_category))
 app.add_handler(CommandHandler("stats", stats))
+app.add_handler(CommandHandler("history", history))
 app.run_polling()

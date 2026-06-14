@@ -121,3 +121,17 @@ def get_monthly_stats(request):
     return Response(
         {"month": now.strftime("%B %Y"), "categories": list(expenses), "total": total}
     )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_history(request):
+    now = datetime.now()
+    expenses = (
+        Expense.objects.filter(
+            user=request.user, date__month=now.month, date__year=now.year
+        )
+        .order_by("-date")
+        .values("amount", "category__name", "date", "description")
+    )
+    return Response(list(expenses))
