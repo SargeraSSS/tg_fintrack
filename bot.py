@@ -86,6 +86,21 @@ async def get_categories():
         return response.json()
 
 
+async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{API_URL}/stats/",
+            headers={"Authorization": f"Token {context.user_data["token"]}"},
+        )
+        data = response.json()
+        if response.status_code == 200:
+            text = f"📊 {data['month']}\n\n"
+            for cat in data["categories"]:
+                text += f"{cat['category__name']} — {cat['total']} PLN\n"
+            text += f"\n💰 Total: {data['total']} PLN"
+            await update.message.reply_text(text)
+
+
 async def handle_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -113,13 +128,16 @@ async def handle_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
     else:
         await query.edit_message_text(
-            "❌ Something went wrong. Please try again.\n"
             "💡 To record an expense, just send a number. Example: 100"
         )
+
+
+#
 
 
 app = ApplicationBuilder().token(BOT_TOKEN).build()
 app.add_handler(CommandHandler("start", start))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 app.add_handler(CallbackQueryHandler(handle_category))
+app.add_handler(CommandHandler("stats", stats))
 app.run_polling()

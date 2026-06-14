@@ -12,6 +12,9 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
+from datetime import datetime
+from django.db.models import Sum
+from rest_framework.decorators import api_view, permission_classes
 
 
 # Categories are public - no auth requaied
@@ -99,3 +102,22 @@ def get_token_by_telegram_id(request, telegram_id):
         return Response({"token": token.key})
     except TelegramUser.DoesNotExist:
         return Response({"error": "User not found"}, status=404)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_monthly_stats(request):
+    now = datetime.now()
+    expenses = (
+        Expense.objects.filter(
+            user=request.user, date__month=now.month, date__year=now.year
+        )
+        .values("category__name")
+        .annotate(total=Sum("amount"))
+    )
+
+    total = sum(item["total"] for item in expenses)
+
+    return Response(
+        {"month": now.strftime("%B %Y"), "categories": list(expenses), "total": total}
+    )
