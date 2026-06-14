@@ -59,6 +59,19 @@ async def register_user(telegram_id: int, context):
 # слухає повідомленя і перевіріяє чи це число
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
+    if context.user_data.get("state") == "adding_category":
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{API_URL}/categories/",
+                json={"name": text},
+                headers={"Authorization": f"Token {context.user_data['token']}"},
+            )
+        context.user_data["state"] = None
+        if response.status_code == 201:
+            await update.message.reply_text(f"✅ Category '{text}' added!")
+        else:
+            await update.message.reply_text("❌ Something went wrong")
+        return
     try:
         amount = float(text)
         context.user_data["amount"] = amount
@@ -75,6 +88,91 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Select category:", reply_markup=reply_markup)
     except ValueError:
         await update.message.reply_text("Please send a number 💸")
+
+
+async def settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    keyboard = [
+        [
+            InlineKeyboardButton("💱 Currency", callback_data="settings_currency"),
+            InlineKeyboardButton("💰 Daily limit", callback_data="settings_limit"),
+        ],
+        [
+            InlineKeyboardButton("📂 Categories", callback_data="settings_categories"),
+            InlineKeyboardButton(
+                "🔄 Regular payments", callback_data="settings_regular"
+            ),
+        ],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text("⚙️ Settings", reply_markup=reply_markup)
+
+
+# CURRENCY_CHOICES = [
+#     ("PLN", "PLN zł"),
+#     ("UAH", "UAH ₴"),
+#     ("EUR", "EUR €"),
+#     ("USD", "USD $"),
+# ]
+
+
+async def handle_settings_callback(query, context):
+    if query.data == "settings_currency":
+        keyboard = [
+            [
+                InlineKeyboardButton("PLN zł", callback_data="currency_PLN"),
+                InlineKeyboardButton("UAH ₴", callback_data="currency_UAH"),
+            ],
+            [
+                InlineKeyboardButton("EUR €", callback_data="currency_EUR"),
+                InlineKeyboardButton("USD $", callback_data="currency_USD"),
+            ],
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.edit_message_text("💱 Choose currency:", reply_markup=reply_markup)
+
+    elif query.data == "settings_limit":
+        await query.edit_message_text("💰 Daily limit feature coming soon!")
+    elif query.data == "settings_categories":
+        keyboard = [
+            [
+                InlineKeyboardButton("➕ Add category", callback_data="cat_add"),
+                InlineKeyboardButton("🗑 Delete category", callback_data="cat_delete"),
+            ]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.edit_message_text("📂 Categories:", reply_markup=reply_markup)
+        pass
+    elif query.data == "cat_add":
+        context.user_data["state"] = "adding_category"
+        await query.edit_message_text("✏️ Enter category name:")
+    elif query.data == "cat_delete":
+        categories = await get_categories()
+        keyboard = [
+            [
+                InlineKeyboardButton(
+                    f"🗑 {cat['name']}", callback_data=f"delete_{cat['id']}"
+                )
+            ]
+            for cat in categories
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.edit_message_text(
+            "Select category to delete:", reply_markup=reply_markup
+        )
+    elif query.data.startswith("delete_"):
+        category_id = query.data.split("_")[1]
+        async with httpx.AsyncClient() as client:
+            response = await client.delete(
+                f"{API_URL}/categories/{category_id}/",
+                headers={"Authorization": f"Token {context.user_data['token']}"},
+            )
+        if response.status_code == 204:
+            await query.edit_message_text("✅ Category deleted!")
+        else:
+            await query.edit_message_text("❌ Something went wrong")
+    elif query.data == "settings_regular":
+        # показати регулярні платежі
+        pass
 
 
 # getting the categories from API
@@ -119,9 +217,17 @@ async def handle_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
+    if (
+        query.data.startswith("settings_")
+        or query.data.startswith("cat_")
+        or query.data.startswith("delete_")
+    ):
+        await handle_settings_callback(query, context)
+        return
     amount = context.user_data.get("amount")
     token = context.user_data.get("token")
     data = query.data.split(":")
+
     category_id = int(data[0])
     category_name = data[1]
 
@@ -155,4 +261,5 @@ app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 app.add_handler(CallbackQueryHandler(handle_category))
 app.add_handler(CommandHandler("stats", stats))
 app.add_handler(CommandHandler("history", history))
+app.add_handler(CommandHandler("settings", settings))
 app.run_polling()
