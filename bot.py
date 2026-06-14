@@ -129,7 +129,19 @@ async def handle_settings_callback(query, context):
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text("💱 Choose currency:", reply_markup=reply_markup)
-
+    elif query.data.startswith("currency_"):
+        currency = query.data.split("_")[1]
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{API_URL}/set-currency/",
+                json={"currency": currency},
+                headers={"Authorization": f"Token {context.user_data['token']}"},
+            )
+        if response.status_code == 200:
+            context.user_data["currency"] = currency
+            await query.edit_message_text(f"✅ Currency set to {currency}!")
+        else:
+            await query.edit_message_text("❌ Something went wrong")
     elif query.data == "settings_limit":
         await query.edit_message_text("💰 Daily limit feature coming soon!")
     elif query.data == "settings_categories":
@@ -186,6 +198,7 @@ async def get_categories():
 
 async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     async with httpx.AsyncClient() as client:
+        currency = context.user_data.get("currency", "PLN")
         response = await client.get(
             f"{API_URL}/stats/",
             headers={"Authorization": f"Token {context.user_data["token"]}"},
@@ -194,8 +207,8 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if response.status_code == 200:
             text = f"📊 {data['month']}\n\n"
             for cat in data["categories"]:
-                text += f"{cat['category__name']} — {cat['total']} PLN\n"
-            text += f"\n💰 Total: {data['total']} PLN"
+                text += f"{cat['category__name']} — {cat['total']} {currency}\n"
+            text += f"\n💰 Total: {data['total']} {currency}"
             await update.message.reply_text(text)
 
 
@@ -221,6 +234,7 @@ async def handle_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
         query.data.startswith("settings_")
         or query.data.startswith("cat_")
         or query.data.startswith("delete_")
+        or query.data.startswith("currency_")
     ):
         await handle_settings_callback(query, context)
         return

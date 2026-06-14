@@ -135,3 +135,13 @@ def get_history(request):
         .values("amount", "category__name", "date", "description")
     )
     return Response(list(expenses))
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def set_currency(request):
+    currency = request.data.get("currency")
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    profile.currency = currency
+    profile.save()
+    return Response({"currency": currency})
