@@ -145,3 +145,10 @@ def set_currency(request):
     profile.currency = currency
     profile.save()
     return Response({"currency": currency})
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_profile(request):
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    return Response({"currency": profile.currency, "day_limit": profile.day_limit})

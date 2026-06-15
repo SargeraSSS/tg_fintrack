@@ -21,4 +21,5 @@ urlpatterns = router.urls + [
     path("stats/", views.get_monthly_stats),
     path("history/", views.get_history),
     path("set-currency/", views.set_currency),
+    path("get-profile/", views.get_profile),
 ]

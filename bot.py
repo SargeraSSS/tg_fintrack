@@ -59,6 +59,14 @@ async def register_user(telegram_id: int, context):
 # слухає повідомленя і перевіріяє чи це число
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
+    if not context.user_data.get("token"):
+        telegram_id = update.effective_user.id
+        await register_user(telegram_id, context)
+
+    if not context.user_data.get("currency"):
+        profile = await get_user_profile(context.user_data.get("token"))
+        context.user_data["currency"] = profile["currency"]
+
     if context.user_data.get("state") == "adding_category":
         async with httpx.AsyncClient() as client:
             response = await client.post(
@@ -72,6 +80,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await update.message.reply_text("❌ Something went wrong")
         return
+
     try:
         amount = float(text)
         context.user_data["amount"] = amount
@@ -105,6 +114,16 @@ async def settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text("⚙️ Settings", reply_markup=reply_markup)
+
+
+async def get_user_profile(token):
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{API_URL}/get-profile/", headers={"Authorization": f"Token {token}"}
+        )
+        if response.status_code == 200:
+            return response.json()
+    return {"currency": "PLN", "day_limit": None}
 
 
 # CURRENCY_CHOICES = [
@@ -252,11 +271,11 @@ async def handle_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
             json={"amount": amount, "category": category_id},
             headers={"Authorization": f"Token {token}"},
         )
-
+    currency = context.user_data.get("currency", "PLN")
     if response.status_code == 201:
         await query.edit_message_text(
             f"✅ Expense saved!\n"
-            f"💰 Amount: {amount} PLN\n"
+            f"💰 Amount: {amount} {currency} \n"
             f"📂 Category: {category_name}\n"
             f"📅 Date: {response.json()['date']}"
         )
