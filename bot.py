@@ -80,7 +80,39 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await update.message.reply_text("❌ Something went wrong")
         return
-
+    elif context.user_data.get("state") == "adding_reg_name":
+        context.user_data["reg_name"] = text
+        context.user_data["state"] = "adding_reg_amount"
+        await update.message.reply_text("💰 Enter payment amount:")
+        return
+    elif context.user_data.get("state") == "adding_reg_amount":
+        context.user_data["reg_amount"] = float(text)
+        context.user_data["state"] = "adding_reg_day"
+        await update.message.reply_text("📅 Enter day of a mouth (1 - 31)")
+        return
+    elif context.user_data.get("state") == "adding_reg_day":
+        day = int(text)
+        if 1 <= day <= 31:
+            context.user_data["reg_day"] = day
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    f"{API_URL}/regular-payments/",
+                    json={
+                        "payment_day": day,
+                        "amount": context.user_data["reg_amount"],
+                        "name": context.user_data["reg_name"],
+                        "category": context.user_data["reg_category_id"],
+                    },
+                    headers={"Authorization": f"Token {context.user_data['token']}"},
+                )
+            context.user_data["state"] = None
+            if response.status_code == 201:
+                await update.message.reply_text("✅ Regular payment added!")
+            else:
+                await update.message.reply_text("❌ Something went wrong")
+        else:
+            await update.message.reply_text("❌ Please enter a number between 1 and 31")
+            return
     try:
         amount = float(text)
         context.user_data["amount"] = amount
@@ -202,8 +234,33 @@ async def handle_settings_callback(query, context):
         else:
             await query.edit_message_text("❌ Something went wrong")
     elif query.data == "settings_regular":
-        # показати регулярні платежі
-        pass
+        keyboard = [
+            [
+                InlineKeyboardButton("➕ Add payment", callback_data="reg_add"),
+                InlineKeyboardButton("📋 View payments", callback_data="reg_view"),
+            ],
+            [InlineKeyboardButton("🗑 Delete payment", callback_data="reg_delete")],
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.edit_message_text("🔄 Regular payments:", reply_markup=reply_markup)
+    elif query.data == "reg_add":
+        categories = await get_categories()
+        keyboard = [
+            [
+                InlineKeyboardButton(
+                    f"{cat['name']}", callback_data=f"regcat_{cat['id']}"
+                )
+            ]
+            for cat in categories
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.edit_message_text(
+            "Select category for regular payment:", reply_markup=reply_markup
+        )
+    elif query.data.startswith("regcat_"):
+        context.user_data["reg_category_id"] = query.data.split("_")[1]
+        context.user_data["state"] = "adding_reg_name"
+        await query.edit_message_text("✏️ Enter payment name (e.g. Internet):")
 
 
 # getting the categories from API
@@ -254,6 +311,8 @@ async def handle_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
         or query.data.startswith("cat_")
         or query.data.startswith("delete_")
         or query.data.startswith("currency_")
+        or query.data.startswith("reg_")
+        or query.data.startswith("regcat_")
     ):
         await handle_settings_callback(query, context)
         return
