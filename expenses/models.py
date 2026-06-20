@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
-from django.core.validators import MaxLengthValidator, MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 
 CURRENCY_CHOICES = [
     ("PLN", "PLN zł"),
@@ -45,6 +45,6 @@ class RegularPayments(models.Model):
     name = models.CharField(max_length=100)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     payment_day = models.IntegerField(
-        validators=[MinValueValidator(1), MaxLengthValidator(31)]
+        validators=[MinValueValidator(1), MaxValueValidator(31)]
     )
     user = models.ForeignKey(User, on_delete=models.CASCADE)

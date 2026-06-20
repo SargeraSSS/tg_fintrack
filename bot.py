@@ -98,7 +98,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 response = await client.post(
                     f"{API_URL}/regular-payments/",
                     json={
-                        "payment_day": day,
+                        "payment_day": context.user_data["reg_day"],
                         "amount": context.user_data["reg_amount"],
                         "name": context.user_data["reg_name"],
                         "category": context.user_data["reg_category_id"],
