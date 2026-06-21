@@ -112,7 +112,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update.message.reply_text("❌ Something went wrong")
         else:
             await update.message.reply_text("❌ Please enter a number between 1 and 31")
-            return
+        return
     try:
         amount = float(text)
         context.user_data["amount"] = amount
@@ -200,7 +200,8 @@ async def handle_settings_callback(query, context):
             [
                 InlineKeyboardButton("➕ Add category", callback_data="cat_add"),
                 InlineKeyboardButton("🗑 Delete category", callback_data="cat_delete"),
-            ]
+            ],
+            [InlineKeyboardButton("⬅️ Back", callback_data="back_to_settings")],
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text("📂 Categories:", reply_markup=reply_markup)
@@ -240,6 +241,7 @@ async def handle_settings_callback(query, context):
                 InlineKeyboardButton("📋 View payments", callback_data="reg_view"),
             ],
             [InlineKeyboardButton("🗑 Delete payment", callback_data="reg_delete")],
+            [InlineKeyboardButton("⬅️ Back", callback_data="back_to_settings")],
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text("🔄 Regular payments:", reply_markup=reply_markup)
@@ -261,6 +263,36 @@ async def handle_settings_callback(query, context):
         context.user_data["reg_category_id"] = query.data.split("_")[1]
         context.user_data["state"] = "adding_reg_name"
         await query.edit_message_text("✏️ Enter payment name (e.g. Internet):")
+    elif query.data == "back_to_settings":
+        keyboard = [
+            [
+                InlineKeyboardButton("💱 Currency", callback_data="settings_currency"),
+                InlineKeyboardButton("💰 Daily limit", callback_data="settings_limit"),
+            ],
+            [
+                InlineKeyboardButton(
+                    "📂 Categories", callback_data="settings_categories"
+                ),
+                InlineKeyboardButton(
+                    "🔄 Regular payments", callback_data="settings_regular"
+                ),
+            ],
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.edit_message_text("⚙️ Settings", reply_markup=reply_markup)
+    elif query.data == "reg_view":
+        async with httpx.AsyncClient() as client:
+            responce = await client.get(
+                f"{API_URL}/regular-payments/",
+                headers={"Authorization": f"Token {context.user_data["token"]}"},
+            )
+            payments = responce.json()
+            currency = context.user_data.get("currency", "PLN")
+            text = "📋 Your's regular expenses\n\n"
+            for expense in payments:
+                # fields = ["amount", "name", "category", "payment_day", "user"]
+                text += f"{expense['name']} — {expense['amount']} {currency} — day {expense['payment_day']} — {expense['category_name']}\n"
+            await query.edit_message_text(text)
 
 
 # getting the categories from API
@@ -313,6 +345,7 @@ async def handle_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
         or query.data.startswith("currency_")
         or query.data.startswith("reg_")
         or query.data.startswith("regcat_")
+        or query.data.startswith("back_to_settings")
     ):
         await handle_settings_callback(query, context)
         return
