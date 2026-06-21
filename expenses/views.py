@@ -15,6 +15,7 @@ from rest_framework.decorators import api_view
 from datetime import datetime
 from django.db.models import Sum
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAdminUser
 
 
 # Categories are public - no auth requaied
@@ -95,6 +96,7 @@ from rest_framework.decorators import api_view
 
 
 @api_view(["GET"])
+@permission_classes([IsAdminUser])
 def get_token_by_telegram_id(request, telegram_id):
     try:
         tg_user = TelegramUser.objects.get(telegram_id=telegram_id)
@@ -102,6 +104,14 @@ def get_token_by_telegram_id(request, telegram_id):
         return Response({"token": token.key})
     except TelegramUser.DoesNotExist:
         return Response({"error": "User not found"}, status=404)
+
+
+@api_view(["GET"])
+@permission_classes([IsAdminUser])
+def get_telegram_id(request):
+    tg_user = TelegramUser.objects.all()
+    ids = list(tg_user.values_list("telegram_id", flat=True))
+    return Response(ids)
 
 
 @api_view(["GET"])
