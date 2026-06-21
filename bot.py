@@ -293,6 +293,37 @@ async def handle_settings_callback(query, context):
                 # fields = ["amount", "name", "category", "payment_day", "user"]
                 text += f"{expense['name']} — {expense['amount']} {currency} — day {expense['payment_day']} — {expense['category_name']}\n"
             await query.edit_message_text(text)
+    elif query.data.startswith("delreg_"):
+        payment_id = query.data.split("_")[1]
+        async with httpx.AsyncClient() as client:
+            response = await client.delete(
+                f"{API_URL}/regular-payments/{payment_id}/",
+                headers={"Authorization": f"Token {context.user_data['token']}"},
+            )
+        if response.status_code == 204:
+            await query.edit_message_text("✅ Regular payment deleted!")
+        else:
+            await query.edit_message_text("❌ Something went wrong")
+    elif query.data == "reg_delete":
+        async with httpx.AsyncClient() as client:
+            responce = await client.get(
+                f"{API_URL}/regular-payments/",
+                headers={"Authorization": f"Token {context.user_data['token']}"},
+            )
+            reg_payments = responce.json()
+
+            keyboard = [
+                [
+                    InlineKeyboardButton(
+                        f"🗑 {payment['name']}", callback_data=f"delreg_{payment['id']}"
+                    )
+                ]
+                for payment in reg_payments
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            await query.edit_message_text(
+                "Select regular payment to delete:", reply_markup=reply_markup
+            )
 
 
 # getting the categories from API
@@ -346,6 +377,7 @@ async def handle_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
         or query.data.startswith("reg_")
         or query.data.startswith("regcat_")
         or query.data.startswith("back_to_settings")
+        or query.data.startswith("delreg_")
     ):
         await handle_settings_callback(query, context)
         return

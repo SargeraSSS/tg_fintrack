@@ -28,7 +28,15 @@ class RegularPaymentsSerializer(serializers.ModelSerializer):
     class Meta:
         model = RegularPayments
         read_only_fields = ["user"]
-        fields = ["amount", "name", "category", "payment_day", "user", "category_name"]
+        fields = [
+            "id",
+            "amount",
+            "name",
+            "category",
+            "payment_day",
+            "user",
+            "category_name",
+        ]
 
 
 class TelegramUserSerializer(serializers.ModelSerializer):
