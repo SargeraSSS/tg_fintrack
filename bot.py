@@ -6,6 +6,7 @@ import httpx
 from telegram.ext import MessageHandler, filters
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CallbackQueryHandler
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -129,6 +130,23 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Select category:", reply_markup=reply_markup)
     except ValueError:
         await update.message.reply_text("Please send a number 💸")
+
+
+async def send_daily_reminder():
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"{API_URL}/all-telegram-ids/",
+            headers={"Authorization": f"Token {ADMIN_TOKEN}"},
+        )
+        ids = response.json()
+
+    for telegram_id in ids:
+        await app.bot.send_message(
+            chat_id=telegram_id,
+            text="""🕗 The day is coming to an end, time to track your day's expenses!
+                    Disable reminder or set time zone in 
+                    /settings""",
+        )
 
 
 async def settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -409,10 +427,13 @@ async def handle_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
-#
+async def on_startup(app):
+    scheduler = AsyncIOScheduler()
+    scheduler.add_job(send_daily_reminder, "cron", hour=23, minute=51)
+    scheduler.start()
 
 
-app = ApplicationBuilder().token(BOT_TOKEN).build()
+app = ApplicationBuilder().token(BOT_TOKEN).post_init(on_startup).build()
 app.add_handler(CommandHandler("start", start))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 app.add_handler(CallbackQueryHandler(handle_category))
