@@ -132,6 +132,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Please send a number 💸")
 
 
+async def process_monthly_payments():
+    async with httpx.AsyncClient() as client:
+        responce = await client.post(
+            f"{API_URL}/process-regular-payments/",
+            headers={"Authorization": f"Token {ADMIN_TOKEN}"},
+        )
+
+
 async def send_daily_reminder():
     async with httpx.AsyncClient() as client:
         response = await client.get(
@@ -144,8 +152,8 @@ async def send_daily_reminder():
         await app.bot.send_message(
             chat_id=telegram_id,
             text="""🕗 The day is coming to an end, time to track your day's expenses!
-                    Disable reminder or set time zone in 
-                    /settings""",
+        Disable reminder or set time zone in 
+        /settings""",
         )
 
 
@@ -371,6 +379,7 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def history(update: Update, context: ContextTypes.DEFAULT_TYPE):
     async with httpx.AsyncClient() as client:
+        currency = context.user_data.get("currency", "PLN")
         responce = await client.get(
             f"{API_URL}/history/",
             headers={"Authorization": f"Token {context.user_data["token"]}"},
@@ -379,7 +388,7 @@ async def history(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = "📋 History\n\n"
         for expense in data:
             desc = f" — {expense['description']}" if expense["description"] else ""
-            text += f"{expense['date']} — {expense['category__name']} — {expense['amount']} PLN{desc}\n"
+            text += f"{expense['date']} — {expense['category__name']} — {expense['amount']} {currency} {desc}\n"
         await update.message.reply_text(text)
 
 
@@ -429,7 +438,8 @@ async def handle_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def on_startup(app):
     scheduler = AsyncIOScheduler()
-    scheduler.add_job(send_daily_reminder, "cron", hour=23, minute=51)
+    scheduler.add_job(send_daily_reminder, "cron", hour=19, minute=0)
+    scheduler.add_job(process_monthly_payments, "cron", day=1, hour=0, minute=0)
     scheduler.start()
 
 

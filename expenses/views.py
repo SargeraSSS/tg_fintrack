@@ -106,6 +106,20 @@ def get_token_by_telegram_id(request, telegram_id):
         return Response({"error": "User not found"}, status=404)
 
 
+@api_view(["POST"])
+@permission_classes([IsAdminUser])
+def regelar_payment_automization(request):
+    payments = RegularPayments.objects.all()
+    for payment in payments:
+        Expense.objects.create(
+            amount=payment.amount,
+            category=payment.category,
+            user=payment.user,
+            description=payment.name,
+        )
+    return Response({"created": len(payments)})
+
+
 @api_view(["GET"])
 @permission_classes([IsAdminUser])
 def get_telegram_id(request):
