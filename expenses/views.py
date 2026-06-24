@@ -163,6 +163,16 @@ def get_history(request):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
+def notification_status(request):
+    status = request.data.get("notification_status")
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    profile.notification_status = status
+    profile.save()
+    return Response({"notification_status": status})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def set_currency(request):
     currency = request.data.get("currency")
     profile, _ = UserProfile.objects.get_or_create(user=request.user)
@@ -175,4 +185,10 @@ def set_currency(request):
 @permission_classes([IsAuthenticated])
 def get_profile(request):
     profile, _ = UserProfile.objects.get_or_create(user=request.user)
-    return Response({"currency": profile.currency, "day_limit": profile.day_limit})
+    return Response(
+        {
+            "currency": profile.currency,
+            "day_limit": profile.day_limit,
+            "notification_status": profile.notification_status,
+        }
+    )

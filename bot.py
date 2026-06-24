@@ -134,7 +134,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def process_monthly_payments():
     async with httpx.AsyncClient() as client:
-        responce = await client.post(
+        response = await client.post(
             f"{API_URL}/process-regular-payments/",
             headers={"Authorization": f"Token {ADMIN_TOKEN}"},
         )
@@ -169,6 +169,7 @@ async def settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "🔄 Regular payments", callback_data="settings_regular"
             ),
         ],
+        [InlineKeyboardButton("🔔 Notifications", callback_data="toggle_notification")],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text("⚙️ Settings", reply_markup=reply_markup)
@@ -308,11 +309,11 @@ async def handle_settings_callback(query, context):
         await query.edit_message_text("⚙️ Settings", reply_markup=reply_markup)
     elif query.data == "reg_view":
         async with httpx.AsyncClient() as client:
-            responce = await client.get(
+            response = await client.get(
                 f"{API_URL}/regular-payments/",
                 headers={"Authorization": f"Token {context.user_data["token"]}"},
             )
-            payments = responce.json()
+            payments = response.json()
             currency = context.user_data.get("currency", "PLN")
             text = "📋 Your's regular expenses\n\n"
             for expense in payments:
@@ -332,11 +333,11 @@ async def handle_settings_callback(query, context):
             await query.edit_message_text("❌ Something went wrong")
     elif query.data == "reg_delete":
         async with httpx.AsyncClient() as client:
-            responce = await client.get(
+            response = await client.get(
                 f"{API_URL}/regular-payments/",
                 headers={"Authorization": f"Token {context.user_data['token']}"},
             )
-            reg_payments = responce.json()
+            reg_payments = response.json()
 
             keyboard = [
                 [
@@ -350,6 +351,26 @@ async def handle_settings_callback(query, context):
             await query.edit_message_text(
                 "Select regular payment to delete:", reply_markup=reply_markup
             )
+    elif query.data == "toggle_notification":
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{API_URL}/get-profile/",
+                headers={"Authorization": f"Token {context.user_data["token"]}"},
+            )
+            status = response.json()["notification_status"]
+            status = not status
+            response = await client.post(
+                f"{API_URL}/notification-status/",
+                json={"notification_status": status},
+                headers={"Authorization": f"Token {context.user_data["token"]}"},
+            )
+            if response.status_code == 200:
+                if status == False:
+                    await query.edit_message_text("🔕 Notifications turned off!")
+                elif status == True:
+                    await query.edit_message_text("🔔 Notifications turned on!")
+            else:
+                await query.edit_message_text("❌ Something went wrong, try again")
 
 
 # getting the categories from API
@@ -380,11 +401,11 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def history(update: Update, context: ContextTypes.DEFAULT_TYPE):
     async with httpx.AsyncClient() as client:
         currency = context.user_data.get("currency", "PLN")
-        responce = await client.get(
+        response = await client.get(
             f"{API_URL}/history/",
             headers={"Authorization": f"Token {context.user_data["token"]}"},
         )
-        data = responce.json()
+        data = response.json()
         text = "📋 History\n\n"
         for expense in data:
             desc = f" — {expense['description']}" if expense["description"] else ""
@@ -398,6 +419,7 @@ async def handle_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if (
         query.data.startswith("settings_")
+        or query.data.startswith("toggle_notification")
         or query.data.startswith("cat_")
         or query.data.startswith("delete_")
         or query.data.startswith("currency_")

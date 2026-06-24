@@ -24,4 +24,5 @@ urlpatterns = router.urls + [
     path("get-profile/", views.get_profile),
     path("all-telegram-ids/", views.get_telegram_id),
     path("process-regular-payments/", views.regelar_payment_automization),
+    path("notification-status/", views.notification_status),
 ]

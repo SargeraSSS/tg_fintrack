@@ -18,7 +18,7 @@ class Category(models.Model):
 
 
 class Expense(models.Model):
-    amount = models.DecimalField(max_digits=8, decimal_places=2)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     date = models.DateField(auto_now_add=True)
     description = models.CharField(max_length=50, blank=True, null=True)
@@ -28,8 +28,9 @@ class Expense(models.Model):
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default="PLN")
+    notification_status = models.BooleanField(default=True)
     day_limit = models.DecimalField(
-        max_digits=6, decimal_places=2, blank=True, null=True
+        max_digits=8, decimal_places=2, blank=True, null=True
     )
 
 
