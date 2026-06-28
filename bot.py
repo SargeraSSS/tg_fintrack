@@ -162,14 +162,6 @@ async def send_daily_reminder():
         /settings""",
             )
 
-    # for telegram_id in ids:
-    #     await app.bot.send_message(
-    #         chat_id=telegram_id,
-    #         text="""🕗 The day is coming to an end, time to track your day's expenses!
-    #     Disable reminder or set time zone in
-    #     /settings""",
-    #     )
-
 
 async def settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
@@ -414,7 +406,6 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def history(update: Update, context: ContextTypes.DEFAULT_TYPE):
     async with httpx.AsyncClient() as client:
-        currency = context.user_data.get("currency", "PLN")
         response = await client.get(
             f"{API_URL}/history/",
             headers={"Authorization": f"Token {context.user_data["token"]}"},
@@ -423,7 +414,7 @@ async def history(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = "📋 History\n\n"
         for expense in data:
             desc = f" — {expense['description']}" if expense["description"] else ""
-            text += f"{expense['date']} — {expense['category__name']} — {expense['amount']} {currency} {desc}\n"
+            text += f"{expense['date']} — {expense['category__name']} — {expense['amount']} {expense['currency']} {desc}\n"
         await update.message.reply_text(text)
 
 

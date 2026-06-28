@@ -23,6 +23,7 @@ class Expense(models.Model):
     date = models.DateField(auto_now_add=True)
     description = models.CharField(max_length=50, blank=True, null=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default="PLN")
 
 
 class UserProfile(models.Model):

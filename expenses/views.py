@@ -36,7 +36,8 @@ class ExpenseViewSet(viewsets.ModelViewSet):
 
     # automatically assigns the current user on creation
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        profile, _ = UserProfile.objects.get_or_create(user=self.request.user)
+        serializer.save(user=self.request.user, currency=profile.currency)
 
 
 # User profile (currency, daily limit) - one per user
@@ -157,7 +158,7 @@ def get_history(request):
             user=request.user, date__month=now.month, date__year=now.year
         )
         .order_by("-date")
-        .values("amount", "category__name", "date", "description")
+        .values("amount", "category__name", "date", "description", "currency")
     )
     return Response(list(expenses))
 
