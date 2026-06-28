@@ -148,13 +148,27 @@ async def send_daily_reminder():
         )
         ids = response.json()
 
-    for telegram_id in ids:
-        await app.bot.send_message(
-            chat_id=telegram_id,
-            text="""🕗 The day is coming to an end, time to track your day's expenses!
+    for item in ids:
+        telegram_id = item["telegram_id"]
+        status = item["notification_status"]
+        if not status:
+            continue
+        else:
+            await app.bot.send_message(
+                chat_id=telegram_id,
+                text="""
+        🕗 The day is coming to an end, time to track your day's expenses!
         Disable reminder or set time zone in 
         /settings""",
-        )
+            )
+
+    # for telegram_id in ids:
+    #     await app.bot.send_message(
+    #         chat_id=telegram_id,
+    #         text="""🕗 The day is coming to an end, time to track your day's expenses!
+    #     Disable reminder or set time zone in
+    #     /settings""",
+    #     )
 
 
 async def settings(update: Update, context: ContextTypes.DEFAULT_TYPE):

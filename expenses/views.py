@@ -124,7 +124,8 @@ def regelar_payment_automization(request):
 @permission_classes([IsAdminUser])
 def get_telegram_id(request):
     tg_user = TelegramUser.objects.all()
-    ids = list(tg_user.values_list("telegram_id", flat=True))
+    ids = tg_user.values_list("telegram_id", "user__userprofile__notification_status")
+    ids = [{"telegram_id": tid, "notification_status": status} for tid, status in ids]
     return Response(ids)
 
 
