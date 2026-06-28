@@ -390,7 +390,6 @@ async def get_categories():
 
 async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     async with httpx.AsyncClient() as client:
-        currency = context.user_data.get("currency", "PLN")
         response = await client.get(
             f"{API_URL}/stats/",
             headers={"Authorization": f"Token {context.user_data["token"]}"},
@@ -399,8 +398,11 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if response.status_code == 200:
             text = f"📊 {data['month']}\n\n"
             for cat in data["categories"]:
-                text += f"{cat['category__name']} — {cat['total']} {currency}\n"
-            text += f"\n💰 Total: {data['total']} {currency}"
+                text += f"{cat['category__name']} — {cat['total']} {cat['currency']}\n"
+            text += "\n💰 Totals:\n"
+            for currency, amount in data["total"].items():
+                text += f"{currency}: {amount}\n"
+
             await update.message.reply_text(text)
 
 

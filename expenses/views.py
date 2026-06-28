@@ -138,14 +138,23 @@ def get_monthly_stats(request):
         Expense.objects.filter(
             user=request.user, date__month=now.month, date__year=now.year
         )
-        .values("category__name")
+        .values("category__name", "currency")
         .annotate(total=Sum("amount"))
     )
 
-    total = sum(item["total"] for item in expenses)
+    totals_by_currency = {}
+    for item in expenses:
+        currency = item["currency"]
+        totals_by_currency[currency] = (
+            totals_by_currency.get(currency, 0) + item["total"]
+        )
 
     return Response(
-        {"month": now.strftime("%B %Y"), "categories": list(expenses), "total": total}
+        {
+            "month": now.strftime("%B %Y"),
+            "categories": list(expenses),
+            "total": totals_by_currency,
+        }
     )
 
 
