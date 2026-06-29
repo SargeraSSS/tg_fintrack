@@ -1,5 +1,12 @@
 from rest_framework import serializers
-from .models import Category, Expense, UserProfile, RegularPayments, TelegramUser
+from .models import (
+    Category,
+    Expense,
+    UserProfile,
+    RegularPayments,
+    TelegramUser,
+    Income,
+)
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -13,6 +20,13 @@ class ExpenseSerializer(serializers.ModelSerializer):
         model = Expense
         read_only_fields = ["user", "date", "currency"]
         fields = ["user", "date", "id", "amount", "category", "description", "currency"]
+
+
+class IncomeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Income
+        read_only_fields = ["user", "date", "currency"]
+        fields = ["user", "date", "id", "amount", "description", "currency"]
 
 
 class UserProfileSerializer(serializers.ModelSerializer):

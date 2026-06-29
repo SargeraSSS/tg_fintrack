@@ -5,12 +5,14 @@ from .views import (
     UserProfileViewSet,
     TelegramUserViewSet,
     RegularPaymentsViewSet,
+    IncomeViewSet,
 )
 from django.urls import path
 from . import views
 
 router = routers.DefaultRouter()
 router.register("expenses", ExpenseViewSet, basename="expense")
+router.register("income", IncomeViewSet, basename="income")
 router.register("categories", CategoryViewSet)
 router.register("user-profile", UserProfileViewSet, basename="user-profile")
 router.register("telegram-user", TelegramUserViewSet, basename="telegram-user")

@@ -1,11 +1,19 @@
 from rest_framework import viewsets
-from .models import Category, Expense, UserProfile, TelegramUser, RegularPayments
+from .models import (
+    Category,
+    Expense,
+    UserProfile,
+    TelegramUser,
+    RegularPayments,
+    Income,
+)
 from .serializers import (
     CategorySerializer,
     ExpenseSerializer,
     UserProfileSerializer,
     TelegramUserSerializer,
     RegularPaymentsSerializer,
+    IncomeSerializer,
 )
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.models import Token
@@ -35,6 +43,18 @@ class ExpenseViewSet(viewsets.ModelViewSet):
         return Expense.objects.filter(user=self.request.user)
 
     # automatically assigns the current user on creation
+    def perform_create(self, serializer):
+        profile, _ = UserProfile.objects.get_or_create(user=self.request.user)
+        serializer.save(user=self.request.user, currency=profile.currency)
+
+
+class IncomeViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    serializer_class = IncomeSerializer
+
+    def get_queryset(self):
+        return Income.objects.filter(user=self.request.user)
+
     def perform_create(self, serializer):
         profile, _ = UserProfile.objects.get_or_create(user=self.request.user)
         serializer.save(user=self.request.user, currency=profile.currency)
