@@ -93,21 +93,16 @@ class TelegramUserViewSet(viewsets.ModelViewSet):
         return TelegramUser.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
-        # get telegram_id from validated data
         telegram_id = serializer.validated_data["telegram_id"]
-        # create a Django user with username like tg_123456789
         user = User.objects.create_user(username=f"tg_{telegram_id}")
         # create an auth token for the new user
         token, _ = Token.objects.get_or_create(user=user)
-        # save TelegramUser linked to the new Django user
         serializer.save(user=user)
 
     def create(self, request, *args, **kwargs):
         response = super().create(request, *args, **kwargs)
-        # find the newly created TelegramUser
         telegram_id = request.data.get("telegram_id")
         tg_user = TelegramUser.objects.get(telegram_id=telegram_id)
-        # get the token and add it to the response
         token, _ = Token.objects.get_or_create(user=tg_user.user)
         response.data["token"] = token.key
         return response

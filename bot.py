@@ -81,6 +81,19 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await update.message.reply_text("❌ Something went wrong")
         return
+    elif context.user_data.get("state") == "adding_income":
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{API_URL}/income/",
+                json={"amount": float(text)},
+                headers={"Authorization": f"Token {context.user_data['token']}"},
+            )
+        context.user_data["state"] = None
+        if response.status_code == 201:
+            await update.message.reply_text(f"💸Income added!")
+        else:
+            await update.message.reply_text("❌ Something went wrong")
+        return
     elif context.user_data.get("state") == "adding_reg_name":
         context.user_data["reg_name"] = text
         context.user_data["state"] = "adding_reg_amount"
@@ -91,6 +104,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data["state"] = "adding_reg_day"
         await update.message.reply_text("📅 Enter day of a mouth (1 - 31)")
         return
+
     elif context.user_data.get("state") == "adding_reg_day":
         day = int(text)
         if 1 <= day <= 31:
@@ -388,6 +402,11 @@ async def get_categories():
         return response.json()
 
 
+async def income(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data["state"] = "adding_income"
+    await update.message.reply_text("💰 Enter income amount:")
+
+
 async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     async with httpx.AsyncClient() as client:
         response = await client.get(
@@ -479,4 +498,5 @@ app.add_handler(CallbackQueryHandler(handle_category))
 app.add_handler(CommandHandler("stats", stats))
 app.add_handler(CommandHandler("history", history))
 app.add_handler(CommandHandler("settings", settings))
+app.add_handler(CommandHandler("income", income))
 app.run_polling()
