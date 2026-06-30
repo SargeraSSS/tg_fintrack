@@ -156,19 +156,30 @@ def get_monthly_stats(request):
         .values("category__name", "currency")
         .annotate(total=Sum("amount"))
     )
-
+    income = (
+        Income.objects.filter(
+            user=request.user, date__month=now.month, date__year=now.year
+        )
+        .values("currency")
+        .annotate(total=Sum("amount"))
+    )
     totals_by_currency = {}
     for item in expenses:
         currency = item["currency"]
         totals_by_currency[currency] = (
             totals_by_currency.get(currency, 0) + item["total"]
         )
+    total_with_income = {}
+    for item in income:
+        currency = item["currency"]
+        total_with_income[currency] = total_with_income.get(currency, 0) + item["total"]
 
     return Response(
         {
             "month": now.strftime("%B %Y"),
             "categories": list(expenses),
             "total": totals_by_currency,
+            "income": total_with_income,
         }
     )
 

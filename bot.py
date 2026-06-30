@@ -421,6 +421,9 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text += "\n💰 Totals:\n"
             for currency, amount in data["total"].items():
                 text += f"{currency}: {amount}\n"
+            text += "\n💸 Income:\n"
+            for currency, amount in data["income"].items():
+                text += f"{currency}: {amount}\n"
 
             await update.message.reply_text(text)
 
