@@ -82,10 +82,18 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("❌ Something went wrong")
         return
     elif context.user_data.get("state") == "adding_income":
+        try:
+            amount = float(text)
+        except ValueError:
+            context.user_data["state"] = None
+            await update.message.reply_text(
+                "Please send a number 💸. Try again /income"
+            )
+            return
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 f"{API_URL}/income/",
-                json={"amount": float(text)},
+                json={"amount": amount},
                 headers={"Authorization": f"Token {context.user_data['token']}"},
             )
         context.user_data["state"] = None
@@ -190,6 +198,7 @@ async def settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ),
         ],
         [InlineKeyboardButton("🔔 Notifications", callback_data="toggle_notification")],
+        [InlineKeyboardButton("❌ Close", callback_data="settings_close")],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text("⚙️ Settings", reply_markup=reply_markup)
@@ -281,6 +290,8 @@ async def handle_settings_callback(query, context):
             await query.edit_message_text("✅ Category deleted!")
         else:
             await query.edit_message_text("❌ Something went wrong")
+    elif query.data == "settings_close":
+        await query.message.delete()
     elif query.data == "settings_regular":
         keyboard = [
             [
