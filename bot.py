@@ -198,7 +198,6 @@ async def settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ),
         ],
         [InlineKeyboardButton("🔔 Notifications", callback_data="toggle_notification")],
-        [InlineKeyboardButton("❌ Close", callback_data="settings_close")],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text("⚙️ Settings", reply_markup=reply_markup)
@@ -335,6 +334,12 @@ async def handle_settings_callback(query, context):
                     "🔄 Regular payments", callback_data="settings_regular"
                 ),
             ],
+            [
+                InlineKeyboardButton(
+                    "🔔 Notifications", callback_data="toggle_notification"
+                )
+            ],
+            [InlineKeyboardButton("❌ Close", callback_data="settings_close")],
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text("⚙️ Settings", reply_markup=reply_markup)
