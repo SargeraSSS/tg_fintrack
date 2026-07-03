@@ -1,4 +1,4 @@
-# FinTrack 💰
+# FinTrack 
 
 A personal finance tracker you control entirely through Telegram.
 
