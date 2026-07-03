@@ -7,6 +7,7 @@ from telegram.ext import MessageHandler, filters
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CallbackQueryHandler
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from telegram import BotCommand
 
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -35,6 +36,23 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"{start_message}")
     else:
         await update.message.reply_text("👋 Welcome back!")
+
+
+async def on_startup(app):
+    await app.bot.set_my_commands(
+        [
+            BotCommand("start", "Register and get started"),
+            BotCommand("stats", "View this month's statistics"),
+            BotCommand("history", "View this month's expense history"),
+            BotCommand("settings", "Manage currency, categories, limits"),
+            BotCommand("income", "Add income"),
+        ]
+    )
+
+    scheduler = AsyncIOScheduler()
+    scheduler.add_job(send_daily_reminder, "cron", hour=19, minute=0)
+    scheduler.add_job(process_monthly_payments, "cron", day=1, hour=0, minute=0)
+    scheduler.start()
 
 
 async def register_user(telegram_id: int, context):
@@ -210,7 +228,7 @@ async def get_user_profile(token):
         )
         if response.status_code == 200:
             return response.json()
-    return {"currency": "PLN", "day_limit": None}
+    return {"currency": "PLN", "saving_goal": None}
 
 
 # CURRENCY_CHOICES = [
@@ -353,7 +371,6 @@ async def handle_settings_callback(query, context):
             currency = context.user_data.get("currency", "PLN")
             text = "📋 Your's regular expenses\n\n"
             for expense in payments:
-                # fields = ["amount", "name", "category", "payment_day", "user"]
                 text += f"{expense['name']} — {expense['amount']} {currency} — day {expense['payment_day']} — {expense['category_name']}\n"
             await query.edit_message_text(text)
     elif query.data.startswith("delreg_"):
@@ -409,7 +426,6 @@ async def handle_settings_callback(query, context):
                 await query.edit_message_text("❌ Something went wrong, try again")
 
 
-# getting the categories from API
 async def get_categories():
     async with httpx.AsyncClient() as client:
         response = await client.get(
@@ -440,6 +456,7 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text += "\n💸 Income:\n"
             for currency, amount in data["income"].items():
                 text += f"{currency}: {amount}\n"
+            text += f"\n💰 Daily limit: {data['daily_limit']} {data['currency']}\n"
 
             await update.message.reply_text(text)
 
@@ -482,7 +499,6 @@ async def handle_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
     category_id = int(data[0])
     category_name = data[1]
 
-    # зберігаємо витрату в API
     async with httpx.AsyncClient() as client:
         response = await client.post(
             f"{API_URL}/expenses/",
@@ -501,13 +517,6 @@ async def handle_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(
             "💡 To record an expense, just send a number. Example: 100"
         )
-
-
-async def on_startup(app):
-    scheduler = AsyncIOScheduler()
-    scheduler.add_job(send_daily_reminder, "cron", hour=19, minute=0)
-    scheduler.add_job(process_monthly_payments, "cron", day=1, hour=0, minute=0)
-    scheduler.start()
 
 
 app = ApplicationBuilder().token(BOT_TOKEN).post_init(on_startup).build()

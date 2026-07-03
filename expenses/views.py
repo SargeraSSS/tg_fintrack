@@ -24,6 +24,7 @@ from datetime import datetime
 from django.db.models import Sum
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAdminUser
+import calendar
 
 
 # Categories are public - no auth requaied
@@ -174,12 +175,24 @@ def get_monthly_stats(request):
         currency = item["currency"]
         total_with_income[currency] = total_with_income.get(currency, 0) + item["total"]
 
+    profile = request.user.userprofile
+    days_in_month = calendar.monthrange(now.year, now.month)[1]
+    remaining_days_in_month = days_in_month - now.day + 1
+    income_total = total_with_income.get(profile.currency, 0)
+    expenses_total = totals_by_currency.get(profile.currency, 0)
+    saving_goal = profile.saving_goal or 0
+    daily_limit = (
+        income_total - saving_goal - expenses_total
+    ) // remaining_days_in_month
+
     return Response(
         {
             "month": now.strftime("%B %Y"),
             "categories": list(expenses),
             "total": totals_by_currency,
             "income": total_with_income,
+            "daily_limit": daily_limit,
+            "currency": profile.currency,
         }
     )
 
@@ -225,7 +238,7 @@ def get_profile(request):
     return Response(
         {
             "currency": profile.currency,
-            "day_limit": profile.day_limit,
+            "saving_goal": profile.saving_goal,
             "notification_status": profile.notification_status,
         }
     )

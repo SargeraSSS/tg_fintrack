@@ -38,7 +38,7 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default="PLN")
     notification_status = models.BooleanField(default=True)
-    day_limit = models.DecimalField(
+    saving_goal = models.DecimalField(
         max_digits=8, decimal_places=2, blank=True, null=True
     )
 
