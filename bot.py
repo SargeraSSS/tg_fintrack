@@ -29,6 +29,24 @@ Here's what I can do:
 """
 
 
+def get_settings_keyboard():
+    keyboard = [
+        [
+            InlineKeyboardButton("💱 Currency", callback_data="settings_currency"),
+            InlineKeyboardButton("🎯 Savings goal", callback_data="settings_savings"),
+        ],
+        [
+            InlineKeyboardButton("📂 Categories", callback_data="settings_categories"),
+            InlineKeyboardButton(
+                "🔄 Regular payments", callback_data="settings_regular"
+            ),
+        ],
+        [InlineKeyboardButton("🔔 Notifications", callback_data="toggle_notification")],
+        [InlineKeyboardButton("❌ Close", callback_data="settings_close")],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     telegram_id = update.effective_user.id
     status = await register_user(telegram_id, context)
@@ -46,6 +64,7 @@ async def on_startup(app):
             BotCommand("history", "View this month's expense history"),
             BotCommand("settings", "Manage currency, categories, limits"),
             BotCommand("income", "Add income"),
+            BotCommand("help", "How to use this bot"),
         ]
     )
 
@@ -144,13 +163,27 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("💰 Enter payment amount:")
         return
     elif context.user_data.get("state") == "adding_reg_amount":
-        context.user_data["reg_amount"] = float(text)
+        try:
+            amount = int(text)
+        except ValueError:
+            context.user_data["state"] = None
+            await update.message.reply_text(
+                "Please send a number 💸. Try again /settings"
+            )
+            return
+        context.user_data["reg_amount"] = amount
         context.user_data["state"] = "adding_reg_day"
-        await update.message.reply_text("📅 Enter day of a mouth (1 - 31)")
+        await update.message.reply_text("📅 Enter day of a mounth (1 - 31)")
         return
 
     elif context.user_data.get("state") == "adding_reg_day":
-        day = int(text)
+        try:
+            day = int(text)
+        except ValueError:
+            context.user_data["state"] = None
+            await update.message.reply_text("Please enter a number between 1 and 31")
+            return
+
         if 1 <= day <= 31:
             context.user_data["reg_day"] = day
             async with httpx.AsyncClient() as client:
@@ -170,8 +203,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 await update.message.reply_text("❌ Something went wrong")
         else:
+            context.user_data["state"] = None
             await update.message.reply_text("❌ Please enter a number between 1 and 31")
         return
+    # ?????????????????????????????????????
     try:
         amount = float(text)
         context.user_data["amount"] = amount
@@ -221,21 +256,31 @@ async def send_daily_reminder():
             )
 
 
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = (
+        "📖 *FinTrack Bot — Guide*\n\n"
+        "💸 *Adding an expense*\n"
+        "Just send a number (e.g. `100`) and pick a category.\n\n"
+        "💰 *Adding income*\n"
+        "/income — then send the amount.\n\n"
+        "📊 *Statistics*\n"
+        "/stats — this month's expenses by category, totals, income, and today's spending limit.\n\n"
+        "📋 *History*\n"
+        "/history — all expenses recorded this month.\n\n"
+        "⚙️ *Settings*\n"
+        "/settings — change currency, set a savings goal, manage categories, "
+        "regular payments, and notifications.\n\n"
+        "🔄 *Regular payments*\n"
+        "Set up recurring expenses (like rent or internet) in Settings — "
+        "they'll be added automatically each month.\n\n"
+        "🔔 *Notifications*\n"
+        "Get a daily reminder at 19:00 to log your expenses (toggle in Settings)."
+    )
+    await update.message.reply_text(text, parse_mode="Markdown")
+
+
 async def settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [
-        [
-            InlineKeyboardButton("💱 Currency", callback_data="settings_currency"),
-            InlineKeyboardButton("🎯 Savings goal", callback_data="settings_savings"),
-        ],
-        [
-            InlineKeyboardButton("📂 Categories", callback_data="settings_categories"),
-            InlineKeyboardButton(
-                "🔄 Regular payments", callback_data="settings_regular"
-            ),
-        ],
-        [InlineKeyboardButton("🔔 Notifications", callback_data="toggle_notification")],
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    reply_markup = get_settings_keyboard()
     await update.message.reply_text("⚙️ Settings", reply_markup=reply_markup)
 
 
@@ -358,29 +403,7 @@ async def handle_settings_callback(query, context):
         context.user_data["state"] = "adding_reg_name"
         await query.edit_message_text("✏️ Enter payment name (e.g. Internet):")
     elif query.data == "back_to_settings":
-        keyboard = [
-            [
-                InlineKeyboardButton("💱 Currency", callback_data="settings_currency"),
-                InlineKeyboardButton(
-                    "🎯 Savings goal", callback_data="settings_savings"
-                ),
-            ],
-            [
-                InlineKeyboardButton(
-                    "📂 Categories", callback_data="settings_categories"
-                ),
-                InlineKeyboardButton(
-                    "🔄 Regular payments", callback_data="settings_regular"
-                ),
-            ],
-            [
-                InlineKeyboardButton(
-                    "🔔 Notifications", callback_data="toggle_notification"
-                )
-            ],
-            [InlineKeyboardButton("❌ Close", callback_data="settings_close")],
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
+        reply_markup = get_settings_keyboard()
         await query.edit_message_text("⚙️ Settings", reply_markup=reply_markup)
     elif query.data == "reg_view":
         async with httpx.AsyncClient() as client:
@@ -548,4 +571,5 @@ app.add_handler(CommandHandler("stats", stats))
 app.add_handler(CommandHandler("history", history))
 app.add_handler(CommandHandler("settings", settings))
 app.add_handler(CommandHandler("income", income))
+app.add_handler(CommandHandler("help", help_command))
 app.run_polling()

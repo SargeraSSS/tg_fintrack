@@ -125,7 +125,7 @@ def get_token_by_telegram_id(request, telegram_id):
 
 @api_view(["POST"])
 @permission_classes([IsAdminUser])
-def regelar_payment_automization(request):
+def regular_payment_automization(request):
     payments = RegularPayments.objects.all()
     for payment in payments:
         Expense.objects.create(
