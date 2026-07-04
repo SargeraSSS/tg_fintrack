@@ -17,15 +17,15 @@ API_URL = os.getenv("API_URL")
 
 start_message = """
 👋 Welcome to FinTrack Bot!
-
 I help you track your daily expenses easily right here in Telegram.
-
 Here's what I can do:
 💸 Record your expenses by simply sending a number
 📊 Show your monthly spending stats
 📋 Keep your expense history
 🔄 Manage regular monthly payments
 💰 Set a daily spending limit
+
+For more info just type /help
 """
 
 
