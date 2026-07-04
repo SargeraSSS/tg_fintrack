@@ -501,7 +501,8 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
             for currency, amount in data["income"].items():
                 text += f"{currency}: {amount}\n"
             text += f"\n💰 Daily limit: {data['daily_limit']} {data['currency']}\n"
-
+            if data.get("currency_mismatch"):
+                text += "⚠️ Some income/expenses are in a different currency — daily limit may be inaccurate.\n"
             await update.message.reply_text(text)
 
 

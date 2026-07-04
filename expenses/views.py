@@ -184,7 +184,9 @@ def get_monthly_stats(request):
     daily_limit = (
         income_total - savings_goal - expenses_total
     ) // remaining_days_in_month
-
+    currency_mismatch = any(
+        currency != profile.currency for currency in total_with_income.keys()
+    ) or any(currency != profile.currency for currency in totals_by_currency.keys())
     return Response(
         {
             "month": now.strftime("%B %Y"),
@@ -193,6 +195,7 @@ def get_monthly_stats(request):
             "income": total_with_income,
             "daily_limit": daily_limit,
             "currency": profile.currency,
+            "currency_mismatch": currency_mismatch,
         }
     )
 
