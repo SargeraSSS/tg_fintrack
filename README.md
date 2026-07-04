@@ -1,6 +1,10 @@
 FinTrack 
 A personal finance tracker you control entirely through Telegram — log expenses and income, track spending by category, and get a daily spending limit calculated automatically from your income, savings goal, and what you've already spent.
+## Screenshots
 
+<img src="screenshots/stats.png" width="400"> <img src="screenshots/flow.png" width="400">
+
+<img src="screenshots/settings.png" width="400">
 Telegram Bot  →  Django REST API  →  PostgreSQL
 
 Features
