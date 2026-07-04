@@ -45,3 +45,53 @@ def test_user_cannot_see_other_users_expenses():
 
     assert response.status_code == 200
     assert len(response.data) == 0
+
+
+@pytest.mark.django_db
+def test_stats_daily_limit(api_client, user):
+    from expenses.models import Category, Expense, UserProfile, Income
+    import calendar
+    from datetime import datetime
+
+    profile, _ = UserProfile.objects.get_or_create(user=user)
+    profile.currency = "PLN"
+    profile.savings_goal = 1000
+    profile.save()
+
+    category = Category.objects.create(name="Food")
+    Expense.objects.create(user=user, amount=2000, category=category, currency="PLN")
+    Income.objects.create(user=user, amount=6000, currency="PLN")
+    response = api_client.get("/api/stats/")
+    now = datetime.now()
+    days_in_month = calendar.monthrange(now.year, now.month)[1]
+    remaining_days = days_in_month - now.day + 1
+    expected_limit = (6000 - 1000 - 2000) // remaining_days
+
+    assert response.data["daily_limit"] == expected_limit
+
+
+@pytest.mark.django_db
+def test_set_savings_goal(api_client, user):
+    from expenses.models import UserProfile
+
+    response = api_client.post("/api/set-savings-goal/", {"savings_goal": 1500})
+    assert response.status_code == 200
+    profile = UserProfile.objects.get(user=user)
+    assert profile.savings_goal == 1500
+
+
+@pytest.mark.django_db
+def test_regular_payment_invalid_day(api_client):
+    from expenses.models import Category
+
+    category = Category.objects.create(name="Bills")
+    response = api_client.post(
+        "/api/regular-payments/",
+        {
+            "name": "Internet",
+            "amount": 65,
+            "payment_day": 45,
+            "category": category.id,
+        },
+    )
+    assert response.status_code == 400
