@@ -33,7 +33,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
         read_only_fields = ["user"]
-        fields = ["user", "currency", "saving_goal"]
+        fields = ["user", "currency", "savings_goal"]
 
 
 class RegularPaymentsSerializer(serializers.ModelSerializer):

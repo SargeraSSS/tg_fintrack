@@ -99,6 +99,24 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await update.message.reply_text("❌ Something went wrong")
         return
+    elif context.user_data.get("state") == "adding_savings_goal":
+        try:
+            amount = int(text)
+        except ValueError:
+            await update.message.reply_text("Please send a number 💸. Try again")
+            return
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{API_URL}/set-savings-goal/",
+                json={"savings_goal": amount},
+                headers={"Authorization": f"Token {context.user_data['token']}"},
+            )
+        context.user_data["state"] = None
+        if response.status_code == 200:
+            await update.message.reply_text(f"Saving goal added!")
+        else:
+            await update.message.reply_text("❌ Something went wrong")
+        return
     elif context.user_data.get("state") == "adding_income":
         try:
             amount = float(text)
@@ -207,7 +225,7 @@ async def settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [
             InlineKeyboardButton("💱 Currency", callback_data="settings_currency"),
-            InlineKeyboardButton("💰 Daily limit", callback_data="settings_limit"),
+            InlineKeyboardButton("🎯 Savings goal", callback_data="settings_savings"),
         ],
         [
             InlineKeyboardButton("📂 Categories", callback_data="settings_categories"),
@@ -228,7 +246,7 @@ async def get_user_profile(token):
         )
         if response.status_code == 200:
             return response.json()
-    return {"currency": "PLN", "saving_goal": None}
+    return {"currency": "PLN", "savings_goal": None}
 
 
 # CURRENCY_CHOICES = [
@@ -266,8 +284,9 @@ async def handle_settings_callback(query, context):
             await query.edit_message_text(f"✅ Currency set to {currency}!")
         else:
             await query.edit_message_text("❌ Something went wrong")
-    elif query.data == "settings_limit":
-        await query.edit_message_text("💰 Daily limit feature coming soon!")
+    elif query.data == "settings_savings":
+        await query.edit_message_text("🎯 Enter your savings goal for this month:")
+        context.user_data["state"] = "adding_savings_goal"
     elif query.data == "settings_categories":
         keyboard = [
             [
@@ -342,7 +361,9 @@ async def handle_settings_callback(query, context):
         keyboard = [
             [
                 InlineKeyboardButton("💱 Currency", callback_data="settings_currency"),
-                InlineKeyboardButton("💰 Daily limit", callback_data="settings_limit"),
+                InlineKeyboardButton(
+                    "🎯 Savings goal", callback_data="settings_savings"
+                ),
             ],
             [
                 InlineKeyboardButton(

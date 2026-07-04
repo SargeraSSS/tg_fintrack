@@ -180,9 +180,9 @@ def get_monthly_stats(request):
     remaining_days_in_month = days_in_month - now.day + 1
     income_total = total_with_income.get(profile.currency, 0)
     expenses_total = totals_by_currency.get(profile.currency, 0)
-    saving_goal = profile.saving_goal or 0
+    savings_goal = profile.savings_goal or 0
     daily_limit = (
-        income_total - saving_goal - expenses_total
+        income_total - savings_goal - expenses_total
     ) // remaining_days_in_month
 
     return Response(
@@ -231,6 +231,16 @@ def set_currency(request):
     return Response({"currency": currency})
 
 
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def set_savings_goal(request):
+    savings_goal = request.data.get("savings_goal")
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    profile.savings_goal = savings_goal
+    profile.save()
+    return Response({"savings_goal": savings_goal})
+
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def get_profile(request):
@@ -238,7 +248,7 @@ def get_profile(request):
     return Response(
         {
             "currency": profile.currency,
-            "saving_goal": profile.saving_goal,
+            "savings_goal": profile.savings_goal,
             "notification_status": profile.notification_status,
         }
     )
