@@ -468,6 +468,17 @@ async def handle_settings_callback(query, context):
                     await query.edit_message_text("🔔 Notifications turned on!")
             else:
                 await query.edit_message_text("❌ Something went wrong, try again")
+    elif query.data.startswith("delexp_"):
+        expense_id = query.data.split("_")[1]
+        async with httpx.AsyncClient() as client:
+            response = await client.delete(
+                f"{API_URL}/expenses/{expense_id}/",
+                headers={"Authorization": f"Token {context.user_data['token']}"},
+            )
+        if response.status_code == 204:
+            await query.edit_message_text("🗑 Expense cancelled!")
+        else:
+            await query.edit_message_text("❌ Something went wrong")
 
 
 async def get_categories():
@@ -523,7 +534,6 @@ async def history(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-
     if (
         query.data.startswith("settings_")
         or query.data.startswith("toggle_notification")
@@ -534,16 +544,15 @@ async def handle_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
         or query.data.startswith("regcat_")
         or query.data.startswith("back_to_settings")
         or query.data.startswith("delreg_")
+        or query.data.startswith("delexp_")
     ):
         await handle_settings_callback(query, context)
         return
     amount = context.user_data.get("amount")
     token = context.user_data.get("token")
     data = query.data.split(":")
-
     category_id = int(data[0])
     category_name = data[1]
-
     async with httpx.AsyncClient() as client:
         response = await client.post(
             f"{API_URL}/expenses/",
@@ -552,11 +561,17 @@ async def handle_category(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
     currency = context.user_data.get("currency", "PLN")
     if response.status_code == 201:
+        expense_id = response.json()["id"]
+        keyboard = [
+            [InlineKeyboardButton("🗑 Cancel", callback_data=f"delexp_{expense_id}")]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text(
             f"✅ Expense saved!\n"
             f"💰 Amount: {amount} {currency} \n"
             f"📂 Category: {category_name}\n"
-            f"📅 Date: {response.json()['date']}"
+            f"📅 Date: {response.json()['date']}",
+            reply_markup=reply_markup,
         )
     else:
         await query.edit_message_text(
