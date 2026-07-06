@@ -43,4 +43,7 @@ jobs:
           DB_PASSWORD: postgres
           DB_HOST: localhost
           DB_PORT: 5432
+          SECRET_KEY: test-secret-key-for-ci-only
+          DEBUG: "True"
+          ALLOWED_HOSTS: localhost,127.0.0.1
         run: pytest
