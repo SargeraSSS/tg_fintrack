@@ -23,10 +23,12 @@ Telegram Bot  →  Django REST API  →  PostgreSQL
 **Backend:** Django, Django REST Framework, PostgreSQL, Token auth
 **Bot:** python-telegram-bot, httpx, APScheduler (background jobs)
 **Testing:** pytest, pytest-django
+**Infra:** Docker, Docker Compose, GitHub Actions (CI), deployed on a Hetzner VPS
 
 ## Status
 
-Active learning project. API, bot, and core features are done and tested. Docker + deployment planned next.
+Fully functional and deployed — running 24/7 on a VPS via Docker. Tests run automatically on every push via GitHub Actions.
+
 
 
 <img src="screenshots/stats.png" width="400">
