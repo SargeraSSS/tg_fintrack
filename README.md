@@ -1,5 +1,5 @@
-# FinTrack 💰
-
+# FinTrack 
+@fintrack_multitoolbot
 A personal finance tracker you control entirely through Telegram — log expenses and income, track spending by category, and get a daily spending limit calculated automatically from your income, savings goal, and what you've already spent.
 
 ## Screenshots are down below ! 
