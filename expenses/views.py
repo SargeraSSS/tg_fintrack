@@ -28,8 +28,6 @@ from .serializers import (
 )
 
 
-# Categories are public - no auth requaied
-# (so the bot can fetch category list for buttons)
 class CategoryViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = CategorySerializer
