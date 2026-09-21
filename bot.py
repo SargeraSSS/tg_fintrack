@@ -136,7 +136,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         context.user_data["state"] = None
         if response.status_code == 200:
-            await update.message.reply_text(f"Saving goal added!")
+            await update.message.reply_text("Saving goal added!")
         else:
             await update.message.reply_text("❌ Something went wrong")
         return
@@ -157,7 +157,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         context.user_data["state"] = None
         if response.status_code == 201:
-            await update.message.reply_text(f"💸Income added!")
+            await update.message.reply_text("💸Income added!")
         else:
             await update.message.reply_text("❌ Something went wrong")
         return
@@ -346,7 +346,6 @@ async def handle_settings_callback(query, context):
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.edit_message_text("📂 Categories:", reply_markup=reply_markup)
-        pass
     elif query.data == "cat_add":
         context.user_data["state"] = "adding_category"
         await query.edit_message_text("✏️ Enter category name:")
