@@ -43,7 +43,8 @@ class CategoryViewSet(viewsets.ModelViewSet):
 
     def perform_destroy(self, instance):
         if instance.user is None:
-            raise PermissionDenied("Acces denied")
+            raise PermissionDenied("Access denied")
+        instance.delete()
 
 
 # Expenses - each user sees only their own
