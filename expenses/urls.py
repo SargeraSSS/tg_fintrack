@@ -14,7 +14,7 @@ from .views import (
 router = routers.DefaultRouter()
 router.register("expenses", ExpenseViewSet, basename="expense")
 router.register("income", IncomeViewSet, basename="income")
-router.register("categories", CategoryViewSet)
+router.register("categories", CategoryViewSet, basename="category")
 router.register("user-profile", UserProfileViewSet, basename="user-profile")
 router.register("telegram-user", TelegramUserViewSet, basename="telegram-user")
 router.register("regular-payments", RegularPaymentsViewSet, basename="regular-payments")

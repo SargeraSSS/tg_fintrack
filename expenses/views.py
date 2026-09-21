@@ -2,10 +2,11 @@ import calendar
 from datetime import datetime
 
 from django.contrib.auth.models import User
-from django.db.models import Sum
+from django.db.models import Q, Sum
 from rest_framework import viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 
@@ -30,8 +31,21 @@ from .serializers import (
 # Categories are public - no auth requaied
 # (so the bot can fetch category list for buttons)
 class CategoryViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
     serializer_class = CategorySerializer
-    queryset = Category.objects.all()
+
+    def get_queryset(self):
+        user = self.request.user
+        if self.action in ("list", "retrieve"):
+            return Category.objects.filter(Q(user=user) | Q(user__isnull=True))
+        return Category.objects.filter(user=user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    def perform_destroy(self, instance):
+        if instance.user is None:
+            raise PermissionDenied("Acces denied")
 
 
 # Expenses - each user sees only their own
