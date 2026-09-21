@@ -1,13 +1,17 @@
 import os
-from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
-from dotenv import load_dotenv
+
 import httpx
-from telegram.ext import MessageHandler, filters
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import CallbackQueryHandler
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from telegram import BotCommand
+from dotenv import load_dotenv
+from telegram import BotCommand, InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.ext import (
+    ApplicationBuilder,
+    CallbackQueryHandler,
+    CommandHandler,
+    ContextTypes,
+    MessageHandler,
+    filters,
+)
 
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -409,7 +413,7 @@ async def handle_settings_callback(query, context):
         async with httpx.AsyncClient() as client:
             response = await client.get(
                 f"{API_URL}/regular-payments/",
-                headers={"Authorization": f"Token {context.user_data["token"]}"},
+                headers={"Authorization": f"Token {context.user_data['token']}"},
             )
             payments = response.json()
             currency = context.user_data.get("currency", "PLN")
@@ -452,14 +456,14 @@ async def handle_settings_callback(query, context):
         async with httpx.AsyncClient() as client:
             response = await client.get(
                 f"{API_URL}/get-profile/",
-                headers={"Authorization": f"Token {context.user_data["token"]}"},
+                headers={"Authorization": f"Token {context.user_data['token']}"},
             )
             status = response.json()["notification_status"]
             status = not status
             response = await client.post(
                 f"{API_URL}/notification-status/",
                 json={"notification_status": status},
-                headers={"Authorization": f"Token {context.user_data["token"]}"},
+                headers={"Authorization": f"Token {context.user_data['token']}"},
             )
             if response.status_code == 200:
                 if status == False:
@@ -498,7 +502,7 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     async with httpx.AsyncClient() as client:
         response = await client.get(
             f"{API_URL}/stats/",
-            headers={"Authorization": f"Token {context.user_data["token"]}"},
+            headers={"Authorization": f"Token {context.user_data['token']}"},
         )
         data = response.json()
         if response.status_code == 200:
@@ -521,7 +525,7 @@ async def history(update: Update, context: ContextTypes.DEFAULT_TYPE):
     async with httpx.AsyncClient() as client:
         response = await client.get(
             f"{API_URL}/history/",
-            headers={"Authorization": f"Token {context.user_data["token"]}"},
+            headers={"Authorization": f"Token {context.user_data['token']}"},
         )
         data = response.json()
         text = "📋 History\n\n"

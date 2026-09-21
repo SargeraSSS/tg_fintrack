@@ -1,14 +1,15 @@
-from rest_framework import routers
-from .views import (
-    ExpenseViewSet,
-    CategoryViewSet,
-    UserProfileViewSet,
-    TelegramUserViewSet,
-    RegularPaymentsViewSet,
-    IncomeViewSet,
-)
 from django.urls import path
+from rest_framework import routers
+
 from . import views
+from .views import (
+    CategoryViewSet,
+    ExpenseViewSet,
+    IncomeViewSet,
+    RegularPaymentsViewSet,
+    TelegramUserViewSet,
+    UserProfileViewSet,
+)
 
 router = routers.DefaultRouter()
 router.register("expenses", ExpenseViewSet, basename="expense")

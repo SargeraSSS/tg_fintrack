@@ -1,11 +1,12 @@
 from rest_framework import serializers
+
 from .models import (
     Category,
     Expense,
-    UserProfile,
+    Income,
     RegularPayments,
     TelegramUser,
-    Income,
+    UserProfile,
 )
 
 
