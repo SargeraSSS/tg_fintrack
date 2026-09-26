@@ -24,7 +24,6 @@ from .serializers import (
     ExpenseSerializer,
     IncomeSerializer,
     RegularPaymentsSerializer,
-    TelegramUserSerializer,
     UserProfileSerializer,
 )
 

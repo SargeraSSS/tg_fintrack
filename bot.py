@@ -56,8 +56,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     status = await register_user(telegram_id, context)
     if status == 201:
         await update.message.reply_text(f"{start_message}")
-    else:
+    elif status == 200:
         await update.message.reply_text("👋 Welcome back!")
+    else:
+        await update.message.reply_text("Service in unavaible. Plese try again later.")
 
 
 async def on_startup(app):
@@ -90,7 +92,6 @@ async def register_user(telegram_id: int, context):
         return response.status_code
 
 
-# слухає повідомленя і перевіріяє чи це число
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
     if not context.user_data.get("token"):
@@ -202,7 +203,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             context.user_data["state"] = None
             await update.message.reply_text("❌ Please enter a number between 1 and 31")
         return
-    # ?????????????????????????????????????
     try:
         amount = float(text)
         context.user_data["amount"] = amount
