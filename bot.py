@@ -81,20 +81,12 @@ async def on_startup(app):
 async def register_user(telegram_id: int, context):
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            f"{API_URL}/telegram-user/",
+            f"{API_URL}/register-telegram/",
             json={"telegram_id": telegram_id},
             headers={"Authorization": f"Token {ADMIN_TOKEN}"},
         )
-        if response.status_code == 201:
+        if response.status_code in (200, 201):
             context.user_data["token"] = response.json()["token"]
-        elif response.status_code == 400:
-            # user already exists — fetch their token
-            token_response = await client.get(
-                f"{API_URL}/get-token/{telegram_id}/",
-                headers={"Authorization": f"Token {ADMIN_TOKEN}"},
-            )
-            if token_response.status_code == 200:
-                context.user_data["token"] = token_response.json()["token"]
         return response.status_code
 
 
