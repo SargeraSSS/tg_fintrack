@@ -20,7 +20,7 @@ API_URL = os.getenv("API_URL")
 
 
 start_message = """
-👋 Welcome to FinTrack Bot!
+Welcome to Kopo Bot!
 I help you track your daily expenses easily right here in Telegram.
 Here's what I can do:
 💸 Record your expenses by simply sending a number
@@ -262,7 +262,7 @@ async def send_daily_reminder():
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (
-        "📖 *FinTrack Bot — Guide*\n\n"
+        "📖 *Kopo Bot — Guide*\n\n"
         "💸 *Adding an expense*\n"
         "Just send a number (e.g. `100`) and pick a category.\n\n"
         "💰 *Adding income*\n"
