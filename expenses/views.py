@@ -2,6 +2,7 @@ import calendar
 from datetime import datetime
 
 from django.contrib.auth.models import User
+from django.db import transaction
 from django.db.models import Q, Sum
 from rest_framework import viewsets
 from rest_framework.authtoken.models import Token
@@ -98,31 +99,26 @@ class RegularPaymentsViewSet(viewsets.ModelViewSet):
         serializer.save(user=self.request.user)
 
 
-# Links Telegram ID to a django user
-class TelegramUserViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated]
-    serializer_class = TelegramUserSerializer
+@api_view(["POST"])
+@permission_classes([IsAdminUser])
+def register_telegram_user(request):
+    telegram_id = request.data.get("telegram_id")
+    if telegram_id is None:
+        return Response({"error": "telegram_id is required"}, status=400)
+    try:
+        telegram_id = int(telegram_id)
+    except (TypeError, ValueError):
+        return Response({"error": "telegram_id given in a wrong form"}, status=400)
 
-    def get_queryset(self):
-        return TelegramUser.objects.filter(user=self.request.user)
-
-    def perform_create(self, serializer):
-        telegram_id = serializer.validated_data["telegram_id"]
-        user = User.objects.create_user(username=f"tg_{telegram_id}")
-        # create an auth token for the new user
-        token, _ = Token.objects.get_or_create(user=user)
-        serializer.save(user=user)
-
-    def create(self, request, *args, **kwargs):
-        response = super().create(request, *args, **kwargs)
-        telegram_id = request.data.get("telegram_id")
-        tg_user = TelegramUser.objects.get(telegram_id=telegram_id)
+    tg_user = TelegramUser.objects.filter(telegram_id=telegram_id).first()
+    if tg_user is not None:
         token, _ = Token.objects.get_or_create(user=tg_user.user)
-        response.data["token"] = token.key
-        return response
-
-
-from rest_framework.decorators import api_view
+        return Response({"token": token.key}, status=200)
+    with transaction.atomic():
+        user = User.objects.create_user(username=f"tg_{telegram_id}")
+        TelegramUser.objects.create(user=user, telegram_id=telegram_id)
+        token, _ = Token.objects.get_or_create(user=user)
+    return Response({"token": token.key}, status=201)
 
 
 @api_view(["GET"])
